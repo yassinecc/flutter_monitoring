@@ -1,6 +1,14 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
-void main() => runApp(MyApp());
+void main() async {
+  Crashlytics.instance.enableInDevMode = true;
+  runZoned<Future<void>>(() async {
+    runApp(MyApp());
+  }, onError: Crashlytics.instance.recordError);
+}
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -44,6 +52,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  static const platform = const MethodChannel('samples.flutter.dev/battery');
   int _counter = 0;
 
   void _incrementCounter() {
@@ -55,6 +64,16 @@ class _MyHomePageState extends State<MyHomePage> {
       // called again, and so nothing would appear to happen.
       _counter++;
     });
+  }
+
+  void _callNativeMethod () async {
+    try {
+      final int result = await platform.invokeMethod('throwError');
+      print(result);
+    } on PlatformException catch (e) {
+      print("Error in _callNativeMethod");
+      print(e);
+    };
   }
 
   @override
@@ -98,6 +117,7 @@ class _MyHomePageState extends State<MyHomePage> {
               '$_counter',
               style: Theme.of(context).textTheme.display1,
             ),
+            RaisedButton(onPressed: _callNativeMethod, child:Text("Print"))
           ],
         ),
       ),
